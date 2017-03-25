@@ -5,9 +5,24 @@ const _ = require('underscore')
 const axios = require('axios')
 
 const { OPENWEATHER_APPID } = process.env
+
+if (OPENWEATHER_APPID === undefined ) {
+  throw new Error('Missing API Key for OpenWeather.')
+  process.exit(-1)
+}
+
 const OPENWEATHER_API_URL = 'http://api.openweathermap.org/data/2.5/weather?lat=35&lon=139&APPID=' + OPENWEATHER_APPID
 
 const db = require('../util/db')
+
+const getDataByReference = async (ref) => {
+  let data
+  const refData = await ref.once('value', snapshot => {
+    data = _.extend(snapshot.val(), { id: snapshot.key })
+  })
+
+  return data
+}
 
 const createUser = async (req, res) => {
   const body = await json(req)
@@ -22,6 +37,45 @@ const createUser = async (req, res) => {
 
   const user = await getDataByReference(newUserRef)
   send(res, 200, user)
+}
+
+const getUser = async (req, res) => {
+  const userId = req.params.id
+  const user = await _getUserById(userId)
+
+  send(res, 200, user)
+}
+
+const getUsers = async (req, res) => {
+  let isConnected
+  if (!_.isUndefined(req.query.is_connected)) {
+    isConnected = req.query.is_connected
+  }
+
+  let users = []
+  const userRef = await db.ref('users').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (user, key) {
+      if (!_.isUndefined(isConnected)) {
+        if (_.isEqual(user.is_connected.toString(), isConnected)) {
+          users.push(_.extend(user, { id: key })) 
+        }
+      }
+      else {
+        users.push(_.extend(user, { id: key }))  
+      }
+    })
+  })
+
+  send(res, 200, users)
+}
+
+const _getUserById = async (userId) => {
+  let user
+  const userRef = await db.ref('users/' + userId).once('value', snapshot => {
+    user = _.extend(snapshot.val(), { id: snapshot.key })
+  })
+
+  return user
 }
 
 const connectUser = async (req, res) => {
@@ -60,31 +114,6 @@ const disconnectUser = async (req, res) => {
   send(res, 200, user)
 }
 
-const getUser = async (req, res) => {
-  const userId = req.params.id
-  const user = await _getUserById(userId)
-
-  send(res, 200, user)
-}
-
-const _getUserById = async (userId) => {
-  let user
-  const userRef = await db.ref('users/' + userId).once('value', snapshot => {
-    user = _.extend(snapshot.val(), { id: snapshot.key })
-  })
-
-  return user
-}
-
-const getDataByReference = async (ref) => {
-  let data
-  const refData = await ref.once('value', snapshot => {
-    data = _.extend(snapshot.val(), { id: snapshot.key })
-  })
-
-  return data
-}
-
 const storeUserSpeed = async (req, res) => {
   const body = await json(req)
   const userId = req.params.id
@@ -101,6 +130,58 @@ const storeUserSpeed = async (req, res) => {
   const userData = await _getUserById(userId)
 
   return _.extend(speedData, { name: userData.name })
+}
+
+const getUserSpeeds = async (req, res) => {
+  const userId = req.params.id
+  
+  let userSpeeds = []
+  const userSpeedsRef = await db.ref('speeds').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (userSpeed, key) {
+      if (userSpeed.user_id === userId) {
+        userSpeeds.push(_.extend(userSpeed, { id: key }))
+      }
+    })
+  })
+
+  send(res, 200, userSpeeds)  
+}
+
+const getSpeeds = async (req, res) => {
+  let speeds = []
+  const speedsRef = await db.ref('speeds').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (speed, key) {
+      speeds.push(_.extend(speed, { id: key }))
+    })
+  })
+
+  send(res, 200, speeds)  
+}
+
+const getUserSpeedWarnings = async (req, res) => {
+  const userId = req.params.id
+  
+  let userSpeedWarnings = []
+  const userSpeedWarningsRef = await db.ref('warnings').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (userSpeedWarning, key) {
+      if (userSpeedWarning.user_id === userId) {
+        userSpeedWarnings.push(_.extend(userSpeedWarning, { id: key }))
+      }
+    })
+  })
+
+  send(res, 200, userSpeedWarnings)  
+}
+
+const getSpeedWarnings = async (req, res) => {
+  let speedWarnings = []
+  const speedWarningsRef = await db.ref('warnings').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (speedWarning, key) {
+      speedWarnings.push(_.extend(speedWarning, { id: key }))
+    })
+  })
+
+  send(res, 200, speedWarnings)  
 }
 
 const notifyUserSpeedWarning = async (req, res) => {
@@ -147,6 +228,32 @@ const storeRashAndGeolocationValue = async (req, res) => {
   return _.extend(rashData, { name: userData.name })
 }
 
+const getUserRashs = async (req, res) => {
+  const userId = req.params.id
+  
+  let userRashs = []
+  const userRashsRef = await db.ref('rashs').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (userRash, key) {
+      if (userRash.user_id === userId) {
+        userRashs.push(_.extend(userRash, { id: key }))
+      }
+    })
+  })
+
+  send(res, 200, userRashs)  
+}
+
+const getRashs = async (req, res) => {
+  let rashs = []
+  const rashsRef = await db.ref('rashs').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (rash, key) {
+      rashs.push(_.extend(rash, { id: key }))
+    })
+  })
+
+  send(res, 200, rashs)  
+}
+
 const notifyUserAccident = async (req, res) => {
   const body = await json(req)
   const userId = req.params.id
@@ -164,11 +271,35 @@ const notifyUserAccident = async (req, res) => {
   const rashData = await getDataByReference(newAccidentRef)
   const userData = await _getUserById(userId)
 
-  // TO-DO: Send alert to nearest C-Client driver that are available using long-lat
-
   // TO-DO: Send alert to emergency line
 
   return _.extend(rashData, { name: userData.name })
+}
+
+const getUserAccidents = async (req, res) => {
+  const userId = req.params.id
+  
+  let userAccidents = []
+  const userAccidentsRef = await db.ref('accidents').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (userAccident, key) {
+      if (userAccident.user_id === userId) {
+        userAccidents.push(_.extend(userAccident, { id: key }))
+      }
+    })
+  })
+
+  send(res, 200, userAccidents)  
+}
+
+const getAccidents = async (req, res) => {
+  let accidents = []
+  const accidentsRef = await db.ref('accidents').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (accident, key) {
+      accidents.push(_.extend(accident, { id: key }))
+    })
+  })
+
+  send(res, 200, accidents)  
 }
 
 const extractWeatherData = function (weatherData) {
@@ -186,11 +317,22 @@ const extractWeatherData = function (weatherData) {
 
 module.exports = router(
   post('/users', createUser),
-  get('/users/:id', getUser),
   post('/users/:id/connect', connectUser),
   post('/users/:id/disconnect', disconnectUser),
   post('/users/:id/speeds', storeUserSpeed),
   post('/users/:id/speedwarning', notifyUserSpeedWarning),
   post('/users/:id/rash', storeRashAndGeolocationValue),
-  post('/users/:id/accident', notifyUserAccident)
+  post('/users/:id/accident', notifyUserAccident),
+
+  get('/users', getUsers),
+  get('/users/:id', getUser),
+  get('/users/:id/speeds', getUserSpeeds),
+  get('/users/:id/speedwarning', getUserSpeedWarnings),
+  get('/users/:id/accidents', getUserAccidents),
+  get('/users/:id/rash', getUserRashs),
+
+  get('/accidents', getAccidents),
+  get('/speeds', getSpeeds),
+  get('/rashs', getRashs),
+  get('/speedwarnings', getSpeedWarnings)
 )
