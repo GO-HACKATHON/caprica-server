@@ -158,6 +158,32 @@ const getSpeeds = async (req, res) => {
   send(res, 200, speeds)  
 }
 
+const getUserSpeedWarnings = async (req, res) => {
+  const userId = req.params.id
+  
+  let userSpeedWarnings = []
+  const userSpeedWarningsRef = await db.ref('warnings').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (userSpeedWarning, key) {
+      if (userSpeedWarning.user_id === userId) {
+        userSpeedWarnings.push(_.extend(userSpeedWarning, { id: key }))
+      }
+    })
+  })
+
+  send(res, 200, userSpeedWarnings)  
+}
+
+const getSpeedWarnings = async (req, res) => {
+  let speedWarnings = []
+  const speedWarningsRef = await db.ref('warnings').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (speedWarning, key) {
+      speedWarnings.push(_.extend(speedWarning, { id: key }))
+    })
+  })
+
+  send(res, 200, speedWarnings)  
+}
+
 const notifyUserSpeedWarning = async (req, res) => {
   const userId = req.params.id
   
@@ -301,10 +327,12 @@ module.exports = router(
   get('/users', getUsers),
   get('/users/:id', getUser),
   get('/users/:id/speeds', getUserSpeeds),
+  get('/users/:id/speedwarning', getUserSpeedWarnings),
   get('/users/:id/accidents', getUserAccidents),
   get('/users/:id/rash', getUserRashs),
 
   get('/accidents', getAccidents),
   get('/speeds', getSpeeds),
-  get('/rashs', getRashs)
+  get('/rashs', getRashs),
+  get('/speedwarnings', getSpeedWarnings)
 )
