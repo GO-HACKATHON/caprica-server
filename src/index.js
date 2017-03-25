@@ -4,15 +4,51 @@ const { json, send } = require('micro')
 
 const db = require('../util/db')
 
-const hello = async (req, res) =>
-  send(res, 200, await Promise.resolve(`Hello ${req.params.who}`))
-
 const user = async (req, res) => {
   const body = await json(req)
-  send(res, 200, body)
+  
+  const userRef = db.ref('users')
+  const newUserRef = await userRef.push({
+    name: body.name,
+    is_connected: false
+  });
+
+  const user = await getDataByReference(newUserRef)
+  send(res, 200, user)
+}
+
+const connect = async (req, res) => {
+  const userId = req.params.id
+  const updatedUser = await db.ref('users/' + userId).update({
+    is_connected: true
+  })
+
+  const user = await getUser(userId)
+  send(res, 200, user)
+}
+
+const disconnect = async (req, res) => {
+  const userId = req.params.id
+  const updatedUser = await db.ref('users/' + userId).update({
+    is_connected: false
+  })
+
+  const user = await getUser(userId)
+  send(res, 200, user)
+}
+
+const getUser = async (userId) => {
+  const user = await db.ref('users/' + userId).once('value', snapshot => snapshot.val())
+  return user
+}
+
+const getDataByReference = async (ref) => {
+  const data = ref.once('value', snapshot => snapshot.val())
+  return data
 }
 
 module.exports = router(
-  get('/hello/:who', hello),
-  post('/user', user)
+  post('/users', user),
+  post('/users/:id/connect', connect),
+  post('/users/:id/disconnect', disconnect)
 )
