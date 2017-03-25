@@ -7,7 +7,7 @@ if (FIREBASE_ID === undefined || FIREBASE_EMAIL === undefined || FIREBASE_PRIVAT
 }
 
 const privateKey = `-----BEGIN PRIVATE KEY-----
-${FIREBASE_PRIVATE_KEY.toString()}
+${FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')}
 -----END PRIVATE KEY-----
 `
 
