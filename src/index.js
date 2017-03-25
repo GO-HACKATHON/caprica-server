@@ -2,6 +2,10 @@ require('dotenv').config()
 const { router, get, post } = require('microrouter')
 const { json, send } = require('micro')
 const _ = require('underscore')
+const axios = require('axios')
+
+const { OPENWEATHER_APPID } = process.env
+const OPENWEATHER_API_URL = 'http://api.openweathermap.org/data/2.5/weather?lat=35&lon=139&APPID=' + OPENWEATHER_APPID
 
 const db = require('../util/db')
 
@@ -99,7 +103,7 @@ const storeUserSpeed = async (req, res) => {
   return _.extend(speedData, { name: userData.name })
 }
 
-const storeUserSpeedWarning = async (req, res) => {
+const notifyUserSpeedWarning = async (req, res) => {
   const userId = req.params.id
   
   const speedRef = db.ref('warnings')
@@ -119,15 +123,22 @@ const storeRashAndGeolocationValue = async (req, res) => {
   const body = await json(req)
   const userId = req.params.id
 
-  // TO-DO: call openweathermap API to retrieve weather information
+  const weatherData = await axios.get(OPENWEATHER_API_URL).
+                                  then( function (response) { return response.data } )
+                                  .catch( function (error) { return error } )
 
-  const rashRef = db.ref('rash')
+  // TO-DO: clasify status from rash value
+
+  const rashRef = db.ref('rashs')
   const newRashRef = await rashRef.push({
     user_id: userId,
     rash: body.rash,
     status: body.status,
     longitude: body.longitude,
-    latitude: body.latitude
+    latitude: body.latitude,
+    weather: extractWeatherData(weatherData),
+    created_at: new Date().getTime(),
+    updated_at: new Date().getTime()
   })
   
   const rashData = await getDataByReference(newRashRef)
@@ -136,12 +147,50 @@ const storeRashAndGeolocationValue = async (req, res) => {
   return _.extend(rashData, { name: userData.name })
 }
 
+const notifyUserAccident = async (req, res) => {
+  const body = await json(req)
+  const userId = req.params.id
+
+  const accidentRef = db.ref('accidents')
+  const newAccidentRef = await accidentRef.push({
+    user_id: userId,
+    longitude: body.longitude,
+    latitude: body.latitude,
+    speed: body.speed,
+    created_at: new Date().getTime(),
+    updated_at: new Date().getTime()
+  })
+  
+  const rashData = await getDataByReference(newAccidentRef)
+  const userData = await _getUserById(userId)
+
+  // TO-DO: Send alert to nearest C-Client driver that are available using long-lat
+
+  // TO-DO: Send alert to emergency line
+
+  return _.extend(rashData, { name: userData.name })
+}
+
+const extractWeatherData = function (weatherData) {
+  return {
+    category: weatherData.weather[0].main,
+    description: weatherData.weather[0].description,
+    temperature: weatherData.main.temp,
+    pressure: weatherData.main.pressure,
+    humidity: weatherData.main.humidity,
+    temperature_max: weatherData.main.temp_max,
+    temperature_min: weatherData.main.temp_min,
+    wind_speed: weatherData.wind.speed
+  }
+}
+
 module.exports = router(
   post('/users', createUser),
   get('/users/:id', getUser),
   post('/users/:id/connect', connectUser),
   post('/users/:id/disconnect', disconnectUser),
   post('/users/:id/speeds', storeUserSpeed),
-  post('/users/:id/speedwarning', storeUserSpeedWarning),
-  post('/users/:id/rash', storeRashAndGeolocationValue)
+  post('/users/:id/speedwarning', notifyUserSpeedWarning),
+  post('/users/:id/rash', storeRashAndGeolocationValue),
+  post('/users/:id/accident', notifyUserAccident)
 )
