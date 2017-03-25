@@ -4,22 +4,17 @@ const { json, send } = require('micro')
 
 const db = require('../util/db')
 
-const hello = async (req, res) =>
-  send(res, 200, await Promise.resolve(`Hello ${req.params.who}`))
-
 const user = async (req, res) => {
   const body = await json(req)
   
   const userRef = db.ref('users')
-
   const newUserRef = await userRef.push({
     name: body.name,
     is_connected: false
   });
 
-  console.log(newUserRef)
-
-  send(res, 200, {caprica: 'online', newUserRef})
+  const user = await getDataByReference(newUserRef)
+  send(res, 200, user)
 }
 
 const connect = async (req, res) => {
@@ -29,7 +24,6 @@ const connect = async (req, res) => {
   })
 
   const user = await getUser(userId)
-
   send(res, 200, user)
 }
 
@@ -40,14 +34,17 @@ const disconnect = async (req, res) => {
   })
 
   const user = await getUser(userId)
-
   send(res, 200, user)
 }
 
 const getUser = async (userId) => {
   const user = await db.ref('users/' + userId).once('value', snapshot => snapshot.val())
-
   return user
+}
+
+const getDataByReference = async (ref) => {
+  const data = ref.once('value', snapshot => snapshot.val())
+  return data
 }
 
 module.exports = router(
