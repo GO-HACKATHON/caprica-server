@@ -5,6 +5,12 @@ const _ = require('underscore')
 const axios = require('axios')
 
 const { OPENWEATHER_APPID } = process.env
+
+if (OPENWEATHER_APPID === undefined ) {
+  throw new Error('Missing API Key for OpenWeather.')
+  process.exit(-1)
+}
+
 const OPENWEATHER_API_URL = 'http://api.openweathermap.org/data/2.5/weather?lat=35&lon=139&APPID=' + OPENWEATHER_APPID
 
 const db = require('../util/db')
@@ -163,8 +169,6 @@ const notifyUserAccident = async (req, res) => {
   
   const rashData = await getDataByReference(newAccidentRef)
   const userData = await _getUserById(userId)
-
-  // TO-DO: Send alert to nearest C-Client driver that are available using long-lat
 
   // TO-DO: Send alert to emergency line
 
