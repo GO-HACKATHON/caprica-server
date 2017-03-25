@@ -1,3 +1,4 @@
+require('dotenv').config()
 const {send} = require('micro')
 const db = require('../util/db')
 

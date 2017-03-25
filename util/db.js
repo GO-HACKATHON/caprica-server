@@ -1,9 +1,23 @@
 const admin = require('firebase-admin')
-const serviceAccount = require('../capricaServiceAccount.json')
+const {FIREBASE_ID, FIREBASE_EMAIL, FIREBASE_PRIVATE_KEY} = process.env
+
+if (FIREBASE_ID === undefined || FIREBASE_EMAIL === undefined || FIREBASE_PRIVATE_KEY === undefined) {
+  throw new Error('Missing credentials.')
+  process.exit(-1)
+}
+
+const privateKey = `-----BEGIN PRIVATE KEY-----
+${FIREBASE_PRIVATE_KEY.toString()}
+-----END PRIVATE KEY-----
+`
 
 try {
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+    credential: admin.credential.cert({
+      projectId: FIREBASE_ID,
+      clientEmail: FIREBASE_EMAIL,
+      privateKey
+    }),
     databaseURL: 'https://caprica-4265b.firebaseio.com/'
   })
 } catch (err) {
