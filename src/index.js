@@ -11,14 +11,16 @@ const createUser = async (req, res) => {
   const userRef = db.ref('users')
   const newUserRef = await userRef.push({
     name: body.name,
-    is_connected: false
+    is_connected: false,
+    created_at: new Date().getTime(),
+    updated_at: new Date().getTime()
   });
 
   const user = await getDataByReference(newUserRef)
   send(res, 200, user)
 }
 
-const connect = async (req, res) => {
+const connectUser = async (req, res) => {
   const userId = req.params.id
   const updatedUser = await db.ref('users/' + userId).update({
     is_connected: true
@@ -28,7 +30,7 @@ const connect = async (req, res) => {
   send(res, 200, user)
 }
 
-const disconnect = async (req, res) => {
+const disconnectUser = async (req, res) => {
   const userId = req.params.id
   const updatedUser = await db.ref('users/' + userId).update({
     is_connected: false
@@ -63,9 +65,28 @@ const getDataByReference = async (ref) => {
   return data
 }
 
+const storeUserSpeed = async (req, res) => {
+  const body = await json(req)
+  const userId = req.params.id
+  
+  const speedRef = db.ref('speeds')
+  const newSpeedRef = await speedRef.push({
+    user_id: userId,
+    speed: body.speed,
+    created_at: new Date().getTime(),
+    updated_at: new Date().getTime()
+  })
+
+  const speedData = await getDataByReference(newSpeedRef)
+  const userData = await _getUserById(userId)
+
+  return _.extend(speedData, { name: userData.name })
+}
+
 module.exports = router(
   post('/users', createUser),
   get('/users/:id', getUser),
-  post('/users/:id/connect', connect),
-  post('/users/:id/disconnect', disconnect)
+  post('/users/:id/connect', connectUser),
+  post('/users/:id/disconnect', disconnectUser),
+  post('/users/:id/speeds', storeUserSpeed)
 )
