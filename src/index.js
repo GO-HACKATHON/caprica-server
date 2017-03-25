@@ -26,6 +26,14 @@ const connectUser = async (req, res) => {
     is_connected: true
   })
 
+  const speedRef = db.ref('userlogs')
+  const newSpeedRef = await speedRef.push({
+    user_id: userId,
+    is_connected: true,
+    created_at: new Date().getTime(),
+    updated_at: new Date().getTime()
+  })
+
   const user = await _getUserById(userId)
   send(res, 200, user)
 }
@@ -34,6 +42,14 @@ const disconnectUser = async (req, res) => {
   const userId = req.params.id
   const updatedUser = await db.ref('users/' + userId).update({
     is_connected: false
+  })
+
+  const speedRef = db.ref('userlogs')
+  const newSpeedRef = await speedRef.push({
+    user_id: userId,
+    is_connected: true,
+    created_at: new Date().getTime(),
+    updated_at: new Date().getTime()
   })
 
   const user = await _getUserById(userId)
