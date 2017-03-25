@@ -99,7 +99,7 @@ const storeUserSpeed = async (req, res) => {
   return _.extend(speedData, { name: userData.name })
 }
 
-const storeUserSpeedWarning = async (req, res) => {
+const notifyUserSpeedWarning = async (req, res) => {
   const userId = req.params.id
   
   const speedRef = db.ref('warnings')
@@ -121,17 +121,43 @@ const storeRashAndGeolocationValue = async (req, res) => {
 
   // TO-DO: call openweathermap API to retrieve weather information
 
-  const rashRef = db.ref('rash')
+  const rashRef = db.ref('rashs')
   const newRashRef = await rashRef.push({
     user_id: userId,
     rash: body.rash,
     status: body.status,
     longitude: body.longitude,
-    latitude: body.latitude
+    latitude: body.latitude,
+    created_at: new Date().getTime(),
+    updated_at: new Date().getTime()
   })
   
   const rashData = await getDataByReference(newRashRef)
   const userData = await _getUserById(userId)
+
+  return _.extend(rashData, { name: userData.name })
+}
+
+const notifyUserAccident = async (req, res) => {
+  const body = await json(req)
+  const userId = req.params.id
+
+  const accidentRef = db.ref('accidents')
+  const newAccidentRef = await accidentRef.push({
+    user_id: userId,
+    longitude: body.longitude,
+    latitude: body.latitude,
+    speed: body.speed,
+    created_at: new Date().getTime(),
+    updated_at: new Date().getTime()
+  })
+  
+  const rashData = await getDataByReference(newAccidentRef)
+  const userData = await _getUserById(userId)
+
+  // TO-DO: Send alert to nearest C-Client driver that are available using long-lat
+
+  // TO-DO: Send alert to emergency line
 
   return _.extend(rashData, { name: userData.name })
 }
@@ -142,6 +168,7 @@ module.exports = router(
   post('/users/:id/connect', connectUser),
   post('/users/:id/disconnect', disconnectUser),
   post('/users/:id/speeds', storeUserSpeed),
-  post('/users/:id/speedwarning', storeUserSpeedWarning),
-  post('/users/:id/rash', storeRashAndGeolocationValue)
+  post('/users/:id/speedwarning', notifyUserSpeedWarning),
+  post('/users/:id/rash', storeRashAndGeolocationValue),
+  post('/users/:id/accident', notifyUserAccident)
 )
