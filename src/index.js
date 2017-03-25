@@ -47,10 +47,22 @@ const getUser = async (req, res) => {
 }
 
 const getUsers = async (req, res) => {
+  let isConnected
+  if (!_.isUndefined(req.query.is_connected)) {
+    isConnected = req.query.is_connected
+  }
+
   let users = []
   const userRef = await db.ref('users').once('value', snapshot => {
     _.mapObject(snapshot.val(), function (user, key) {
-      users.push(_.extend(user, { id: key }))
+      if (!_.isUndefined(isConnected)) {
+        if (_.isEqual(user.is_connected.toString(), isConnected)) {
+          users.push(_.extend(user, { id: key })) 
+        }
+      }
+      else {
+        users.push(_.extend(user, { id: key }))  
+      }
     })
   })
 
@@ -231,6 +243,17 @@ const getUserAccidents = async (req, res) => {
   send(res, 200, userAccidents)  
 }
 
+const getAccidents = async (req, res) => {
+  let accidents = []
+  const accidentsRef = await db.ref('accidents').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (accident, key) {
+      accidents.push(_.extend(accident, { id: key }))
+    })
+  })
+
+  send(res, 200, accidents)  
+}
+
 const extractWeatherData = function (weatherData) {
   return {
     category: weatherData.weather[0].main,
@@ -257,5 +280,7 @@ module.exports = router(
   get('/users/:id', getUser),
   get('/users/:id/speeds', getUserSpeeds),
   get('/users/:id/accidents', getUserAccidents),
-  get('/users/:id/rash', getUserRashs)
+  get('/users/:id/rash', getUserRashs),
+
+  get('/accidents', getAccidents)
 )
