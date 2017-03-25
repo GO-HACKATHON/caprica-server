@@ -2,6 +2,10 @@ require('dotenv').config()
 const { router, get, post } = require('microrouter')
 const { json, send } = require('micro')
 const _ = require('underscore')
+const axios = require('axios')
+
+const { OPENWEATHER_APPID } = process.env
+const OPENWEATHER_API_URL = 'http://api.openweathermap.org/data/2.5/weather?lat=35&lon=139&APPID=' + OPENWEATHER_APPID
 
 const db = require('../util/db')
 
@@ -119,7 +123,11 @@ const storeRashAndGeolocationValue = async (req, res) => {
   const body = await json(req)
   const userId = req.params.id
 
-  // TO-DO: call openweathermap API to retrieve weather information
+  const weatherData = await axios.get(OPENWEATHER_API_URL).
+                                  then( function (response) { return response.data } )
+                                  .catch( function (error) { return error } )
+
+  // TO-DO: clasify status from rash value
 
   const rashRef = db.ref('rashs')
   const newRashRef = await rashRef.push({
@@ -128,6 +136,7 @@ const storeRashAndGeolocationValue = async (req, res) => {
     status: body.status,
     longitude: body.longitude,
     latitude: body.latitude,
+    weather: extractWeatherData(weatherData),
     created_at: new Date().getTime(),
     updated_at: new Date().getTime()
   })
@@ -160,6 +169,19 @@ const notifyUserAccident = async (req, res) => {
   // TO-DO: Send alert to emergency line
 
   return _.extend(rashData, { name: userData.name })
+}
+
+const extractWeatherData = function (weatherData) {
+  return {
+    category: weatherData.weather[0].main,
+    description: weatherData.weather[0].description,
+    temperature: weatherData.main.temp,
+    pressure: weatherData.main.pressure,
+    humidity: weatherData.main.humidity,
+    temperature_max: weatherData.main.temp_max,
+    temperature_min: weatherData.main.temp_min,
+    wind_speed: weatherData.wind.speed
+  }
 }
 
 module.exports = router(

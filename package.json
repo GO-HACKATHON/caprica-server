@@ -6,6 +6,7 @@
   "author": "Muhammad Mustadi <muhammad.mustadi@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "axios": "^0.15.3",
     "dotenv": "^4.0.0",
     "firebase": "^3.7.3",
     "firebase-admin": "^4.1.3",
