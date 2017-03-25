@@ -115,11 +115,33 @@ const storeUserSpeedWarning = async (req, res) => {
   return _.extend(speedWarningData, { name: userData.name })
 }
 
+const storeRashAndGeolocationValue = async (req, res) => {
+  const body = await json(req)
+  const userId = req.params.id
+
+  // TO-DO: call openweathermap API to retrieve weather information
+
+  const rashRef = db.ref('rash')
+  const newRashRef = await rashRef.push({
+    user_id: userId,
+    rash: body.rash,
+    status: body.status,
+    longitude: body.longitude,
+    latitude: body.latitude
+  })
+  
+  const rashData = await getDataByReference(newRashRef)
+  const userData = await _getUserById(userId)
+
+  return _.extend(rashData, { name: userData.name })
+}
+
 module.exports = router(
   post('/users', createUser),
   get('/users/:id', getUser),
   post('/users/:id/connect', connectUser),
   post('/users/:id/disconnect', disconnectUser),
   post('/users/:id/speeds', storeUserSpeed),
-  post('/users/:id/speedwarning', storeUserSpeedWarning)
+  post('/users/:id/speedwarning', storeUserSpeedWarning),
+  post('/users/:id/rash', storeRashAndGeolocationValue)
 )
