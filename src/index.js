@@ -1,10 +1,11 @@
 require('dotenv').config()
 const { router, get, post } = require('microrouter')
 const { json, send } = require('micro')
+const _ = require('underscore')
 
 const db = require('../util/db')
 
-const user = async (req, res) => {
+const createUser = async (req, res) => {
   const body = await json(req)
   
   const userRef = db.ref('users')
@@ -23,7 +24,7 @@ const connect = async (req, res) => {
     is_connected: true
   })
 
-  const user = await getUser(userId)
+  const user = await _getUserById(userId)
   send(res, 200, user)
 }
 
@@ -33,22 +34,38 @@ const disconnect = async (req, res) => {
     is_connected: false
   })
 
-  const user = await getUser(userId)
+  const user = await _getUserById(userId)
   send(res, 200, user)
 }
 
-const getUser = async (userId) => {
-  const user = await db.ref('users/' + userId).once('value', snapshot => snapshot.val())
+const getUser = async (req, res) => {
+  const userId = req.params.id
+  const user = await _getUserById(userId)
+
+  send(res, 200, user)
+}
+
+const _getUserById = async (userId) => {
+  let user
+  const userRef = await db.ref('users/' + userId).once('value', snapshot => {
+    user = _.extend(snapshot.val(), { id: snapshot.key })
+  })
+
   return user
 }
 
 const getDataByReference = async (ref) => {
-  const data = ref.once('value', snapshot => snapshot.val())
+  let data
+  const refData = await ref.once('value', snapshot => {
+    data = _.extend(snapshot.val(), { id: snapshot.key })
+  })
+
   return data
 }
 
 module.exports = router(
-  post('/users', user),
+  post('/users', createUser),
+  get('/users/:id', getUser),
   post('/users/:id/connect', connect),
   post('/users/:id/disconnect', disconnect)
 )
