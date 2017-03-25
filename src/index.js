@@ -123,19 +123,16 @@ const storeUserSpeed = async (req, res) => {
 const getUserSpeeds = async (req, res) => {
   const userId = req.params.id
   
-  const speedRef = db.ref('speeds')
+  let userSpeeds = []
+  const userSpeedsRef = await db.ref('speeds').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (userSpeed, key) {
+      if (userSpeed.user_id === userId) {
+        userSpeeds.push(_.extend(userSpeed, { id: key }))
+      }
+    })
+  })
 
-  // const newSpeedRef = await speedRef.push({
-  //   user_id: userId,
-  //   speed: body.speed,
-  //   created_at: new Date().getTime(),
-  //   updated_at: new Date().getTime()
-  // })
-
-  // const speedData = await getDataByReference(newSpeedRef)
-  // const userData = await _getUserById(userId)
-
-  // return _.extend(speedData, { name: userData.name })
+  send(res, 200, userSpeeds)  
 }
 
 const notifyUserSpeedWarning = async (req, res) => {
@@ -182,6 +179,21 @@ const storeRashAndGeolocationValue = async (req, res) => {
   return _.extend(rashData, { name: userData.name })
 }
 
+const getUserRashs = async (req, res) => {
+  const userId = req.params.id
+  
+  let userRashs = []
+  const userRashsRef = await db.ref('rashs').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (userRash, key) {
+      if (userRash.user_id === userId) {
+        userRashs.push(_.extend(userRash, { id: key }))
+      }
+    })
+  })
+
+  send(res, 200, userRashs)  
+}
+
 const notifyUserAccident = async (req, res) => {
   const body = await json(req)
   const userId = req.params.id
@@ -202,6 +214,21 @@ const notifyUserAccident = async (req, res) => {
   // TO-DO: Send alert to emergency line
 
   return _.extend(rashData, { name: userData.name })
+}
+
+const getUserAccidents = async (req, res) => {
+  const userId = req.params.id
+  
+  let userAccidents = []
+  const userAccidentsRef = await db.ref('accidents').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (userAccident, key) {
+      if (userAccident.user_id === userId) {
+        userAccidents.push(_.extend(userAccident, { id: key }))
+      }
+    })
+  })
+
+  send(res, 200, userAccidents)  
 }
 
 const extractWeatherData = function (weatherData) {
@@ -228,5 +255,7 @@ module.exports = router(
 
   get('/users', getUsers),
   get('/users/:id', getUser),
-  get('/users/:id/speeds', getUserSpeeds)
+  get('/users/:id/speeds', getUserSpeeds),
+  get('/users/:id/accidents', getUserAccidents),
+  get('/users/:id/rash', getUserRashs)
 )
