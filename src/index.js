@@ -147,6 +147,17 @@ const getUserSpeeds = async (req, res) => {
   send(res, 200, userSpeeds)  
 }
 
+const getSpeeds = async (req, res) => {
+  let speeds = []
+  const speedsRef = await db.ref('speeds').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (speed, key) {
+      speeds.push(_.extend(speed, { id: key }))
+    })
+  })
+
+  send(res, 200, speeds)  
+}
+
 const notifyUserSpeedWarning = async (req, res) => {
   const userId = req.params.id
   
@@ -204,6 +215,17 @@ const getUserRashs = async (req, res) => {
   })
 
   send(res, 200, userRashs)  
+}
+
+const getRashs = async (req, res) => {
+  let rashs = []
+  const rashsRef = await db.ref('rashs').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (rash, key) {
+      rashs.push(_.extend(rash, { id: key }))
+    })
+  })
+
+  send(res, 200, rashs)  
 }
 
 const notifyUserAccident = async (req, res) => {
@@ -282,5 +304,7 @@ module.exports = router(
   get('/users/:id/accidents', getUserAccidents),
   get('/users/:id/rash', getUserRashs),
 
-  get('/accidents', getAccidents)
+  get('/accidents', getAccidents),
+  get('/speeds', getSpeeds),
+  get('/rashs', getRashs)
 )
