@@ -15,6 +15,15 @@ const OPENWEATHER_API_URL = 'http://api.openweathermap.org/data/2.5/weather?lat=
 
 const db = require('../util/db')
 
+const getDataByReference = async (ref) => {
+  let data
+  const refData = await ref.once('value', snapshot => {
+    data = _.extend(snapshot.val(), { id: snapshot.key })
+  })
+
+  return data
+}
+
 const createUser = async (req, res) => {
   const body = await json(req)
   
@@ -28,6 +37,33 @@ const createUser = async (req, res) => {
 
   const user = await getDataByReference(newUserRef)
   send(res, 200, user)
+}
+
+const getUser = async (req, res) => {
+  const userId = req.params.id
+  const user = await _getUserById(userId)
+
+  send(res, 200, user)
+}
+
+const getUsers = async (req, res) => {
+  let users = []
+  const userRef = await db.ref('users').once('value', snapshot => {
+    _.mapObject(snapshot.val(), function (user, key) {
+      users.push(_.extend(user, { id: key }))
+    })
+  })
+
+  send(res, 200, users)
+}
+
+const _getUserById = async (userId) => {
+  let user
+  const userRef = await db.ref('users/' + userId).once('value', snapshot => {
+    user = _.extend(snapshot.val(), { id: snapshot.key })
+  })
+
+  return user
 }
 
 const connectUser = async (req, res) => {
@@ -66,31 +102,6 @@ const disconnectUser = async (req, res) => {
   send(res, 200, user)
 }
 
-const getUser = async (req, res) => {
-  const userId = req.params.id
-  const user = await _getUserById(userId)
-
-  send(res, 200, user)
-}
-
-const _getUserById = async (userId) => {
-  let user
-  const userRef = await db.ref('users/' + userId).once('value', snapshot => {
-    user = _.extend(snapshot.val(), { id: snapshot.key })
-  })
-
-  return user
-}
-
-const getDataByReference = async (ref) => {
-  let data
-  const refData = await ref.once('value', snapshot => {
-    data = _.extend(snapshot.val(), { id: snapshot.key })
-  })
-
-  return data
-}
-
 const storeUserSpeed = async (req, res) => {
   const body = await json(req)
   const userId = req.params.id
@@ -107,6 +118,24 @@ const storeUserSpeed = async (req, res) => {
   const userData = await _getUserById(userId)
 
   return _.extend(speedData, { name: userData.name })
+}
+
+const getUserSpeeds = async (req, res) => {
+  const userId = req.params.id
+  
+  const speedRef = db.ref('speeds')
+
+  // const newSpeedRef = await speedRef.push({
+  //   user_id: userId,
+  //   speed: body.speed,
+  //   created_at: new Date().getTime(),
+  //   updated_at: new Date().getTime()
+  // })
+
+  // const speedData = await getDataByReference(newSpeedRef)
+  // const userData = await _getUserById(userId)
+
+  // return _.extend(speedData, { name: userData.name })
 }
 
 const notifyUserSpeedWarning = async (req, res) => {
@@ -190,11 +219,14 @@ const extractWeatherData = function (weatherData) {
 
 module.exports = router(
   post('/users', createUser),
-  get('/users/:id', getUser),
   post('/users/:id/connect', connectUser),
   post('/users/:id/disconnect', disconnectUser),
   post('/users/:id/speeds', storeUserSpeed),
   post('/users/:id/speedwarning', notifyUserSpeedWarning),
   post('/users/:id/rash', storeRashAndGeolocationValue),
-  post('/users/:id/accident', notifyUserAccident)
+  post('/users/:id/accident', notifyUserAccident),
+
+  get('/users', getUsers),
+  get('/users/:id', getUser),
+  get('/users/:id/speeds', getUserSpeeds)
 )
