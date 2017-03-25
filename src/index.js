@@ -83,10 +83,27 @@ const storeUserSpeed = async (req, res) => {
   return _.extend(speedData, { name: userData.name })
 }
 
+const storeUserSpeedWarning = async (req, res) => {
+  const userId = req.params.id
+  
+  const speedRef = db.ref('warnings')
+  const newSpeedRef = await speedRef.push({
+    user_id: userId,
+    created_at: new Date().getTime(),
+    updated_at: new Date().getTime()
+  })
+
+  const speedWarningData = await getDataByReference(newSpeedRef)
+  const userData = await _getUserById(userId)
+
+  return _.extend(speedWarningData, { name: userData.name })
+}
+
 module.exports = router(
   post('/users', createUser),
   get('/users/:id', getUser),
   post('/users/:id/connect', connectUser),
   post('/users/:id/disconnect', disconnectUser),
-  post('/users/:id/speeds', storeUserSpeed)
+  post('/users/:id/speeds', storeUserSpeed),
+  post('/users/:id/speedwarning', storeUserSpeedWarning)
 )
