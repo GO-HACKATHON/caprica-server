@@ -1,6 +1,6 @@
 {
   "name": "caprica-server",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "main": "index.js",
   "repository": "https://github.com/GO-HACKATHON/caprica-server",
   "author": "Muhammad Mustadi <muhammad.mustadi@gmail.com>",
@@ -13,7 +13,7 @@
     "microrouter": "^2.0.1"
   },
   "scripts": {
-    "start": "micro src"
+    "start": "micro src -p $PORT"
   },
   "engines": {
     "node": "7.x.x"
