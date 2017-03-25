@@ -14,5 +14,8 @@
   },
   "scripts": {
     "start": "micro src"
+  },
+  "engines": {
+    "node": "7.x.x"
   }
 }
