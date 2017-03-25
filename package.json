@@ -13,7 +13,7 @@
     "microrouter": "^2.0.1"
   },
   "scripts": {
-    "start": "micro src"
+    "start": "micro src -p $PORT"
   },
   "engines": {
     "node": "7.x.x"
