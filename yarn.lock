@@ -428,6 +428,12 @@ micro@^7.2.1:
     raw-body "2.2.0"
     update-notifier "2.1.0"
 
+microrouter@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/microrouter/-/microrouter-2.0.1.tgz#a2209dec39cdc662cd09435e7992f00efb188c54"
+  dependencies:
+    url-pattern "^1.0.3"
+
 minimist@0.0.8:
   version "0.0.8"
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-0.0.8.tgz#857fcabfc3397d2625b8228262e86aa7a011b05d"
@@ -657,6 +663,10 @@ url-parse-lax@^1.0.0:
   resolved "https://registry.yarnpkg.com/url-parse-lax/-/url-parse-lax-1.0.0.tgz#7af8f303645e9bd79a272e7a14ac68bc0609da73"
   dependencies:
     prepend-http "^1.0.1"
+
+url-pattern@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/url-pattern/-/url-pattern-1.0.3.tgz#0409292471b24f23c50d65a47931793d2b5acfc1"
 
 vlq@^0.2.1:
   version "0.2.1"
